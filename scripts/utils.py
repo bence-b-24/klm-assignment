@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 import os
 from py4j.java_gateway import java_import
 
-def get_spark_session(app_name: str, catalog_name: str, warehouse_path: str) -> SparkSession:
+def get_spark_session(app_name: str, catalog_name: str, warehouse_path: str, spark_master: str = "spark://spark-master:7077") -> SparkSession:
     """
     Create a Spark session with the specified catalog name and warehouse path.
     
@@ -24,17 +24,17 @@ def get_spark_session(app_name: str, catalog_name: str, warehouse_path: str) -> 
                 .config("spark.sql.catalog.hdfs_catalog.type", "hadoop")
                 .config("spark.sql.catalog.hdfs_catalog.warehouse", warehouse_path)
                 .config("spark.sql.defaultCatalog", catalog_name)
-                .master("spark://spark-master:7077").getOrCreate())
+                .master(spark_master).getOrCreate())
     else:
         return (SparkSession.builder.appName(app_name)
-            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-            .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-            .config("spark.sql.catalog.spark_catalog.type", "hive")
-            .config("spark.sql.catalog.local_catalog", "org.apache.iceberg.spark.SparkCatalog")
-            .config("spark.sql.catalog.local_catalog.type", "hadoop")
-            .config("spark.sql.catalog.local_catalog.warehouse", warehouse_path)
-            .config("spark.sql.defaultCatalog", catalog_name)
-            .master("spark://spark-master:7077").getOrCreate())
+                .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
+                .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
+                .config("spark.sql.catalog.spark_catalog.type", "hive")
+                .config("spark.sql.catalog.local_catalog", "org.apache.iceberg.spark.SparkCatalog")
+                .config("spark.sql.catalog.local_catalog.type", "hadoop")
+                .config("spark.sql.catalog.local_catalog.warehouse", warehouse_path)
+                .config("spark.sql.defaultCatalog", catalog_name)
+                .master(spark_master).getOrCreate())
 
 def move_local_files(source_path, dest_path):
     os.makedirs(dest_path, exist_ok=True)
