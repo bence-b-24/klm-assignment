@@ -50,10 +50,17 @@ df_flights = df_flights.withColumn("season", F.when(F.month("adjustedDepartureDa
                                         .when(F.month("adjustedDepartureDate").between(9, 11), "Autumn")
                                         .otherwise("Winter"))
 
-df_flights = df_flights.join(df_flights_passengers_asn, df_flights.flight_id == df_flights_passengers_asn.flight_id, "inner")
+df_passengers = spark.read.format("iceberg").load(f"{catalog_name}.normalized.passengers")
 
-df_aggregated = df_flights.groupBy("destinationCountry", "dayOfWeek", "season").agg(
-        F.count("*").alias("number_of_passengers"))
+df_joined = (df_flights.join(df_flights_passengers_asn, df_flights.flight_id == df_flights_passengers_asn.flight_id, "inner")
+             .join(df_passengers, df_flights_passengers_asn.uci == df_passengers.uci, "inner"))
+
+df_aggregated = df_joined.groupBy("destinationCountry", "dayOfWeek", "season").agg(
+    F.count("*").alias("number_of_passengers"),
+    F.sum(F.when(F.col("passengerType") == F.lit("ADT"), 1).otherwise(0)).alias("number_of_adults"),
+    F.sum(F.when(F.col("passengerType") == F.lit("CHD"), 1).otherwise(0)).alias("number_of_children"),
+    F.round(F.avg(F.col("age")), 2).alias("average_age")
+    )
 
 df_result = df_aggregated.orderBy(F.col("number_of_passengers").desc())
 

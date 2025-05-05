@@ -78,9 +78,21 @@ with DAG(
         py_files="/scripts/utils.py"
     )
     
-    create_report = SparkSubmitOperator(
-        task_id='create_report',
-        application='/scripts/create_report.py',
+    create_report_01 = SparkSubmitOperator(
+        task_id='create_report_01',
+        application='/scripts/create_report_01.py',
+        conn_id='spark_default',
+        application_args=[airports_input_path, bookings_input_path, target_base_path, start_date, end_date],
+        verbose=True,
+        conf={
+            "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
+        },
+        py_files="/scripts/utils.py"
+    )
+    
+    create_report_02 = SparkSubmitOperator(
+        task_id='create_report_02',
+        application='/scripts/create_report_02.py',
         conn_id='spark_default',
         application_args=[airports_input_path, bookings_input_path, target_base_path, start_date, end_date],
         verbose=True,
@@ -90,4 +102,5 @@ with DAG(
         py_files="/scripts/utils.py"
     )
 
-    load_airports >> extract_bookings >> [load_flights, load_passengers, load_flights_passengers_asn] >> create_report
+    load_airports >> extract_bookings >> [load_flights, load_passengers, load_flights_passengers_asn] >> create_report_01
+    [load_flights, load_passengers, load_flights_passengers_asn] >> create_report_02
