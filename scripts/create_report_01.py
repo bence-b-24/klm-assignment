@@ -18,7 +18,7 @@ catalog_name = "hdfs_catalog" if target_path.startswith("hdfs://") else "local_c
 start_date = sys.argv[4] if sys.argv[4] != "none" else None
 end_date = sys.argv[5] if sys.argv[5] != "none" else None
 
-spark = get_spark_session(app_name="create_report", catalog_name=catalog_name, warehouse_path=sys.argv[3])
+spark = get_spark_session(app_name="create_report_01", catalog_name=catalog_name, warehouse_path=sys.argv[3])
 
 def add_hours_to_timestamp(timestamp_col, hours_col):
     if timestamp_col is not None and hours_col is not None:

@@ -40,7 +40,7 @@ def extract_flights(df: DataFrame) -> tuple[DataFrame, DataFrame]:
     return df_flights, df_flights_passengers_asn
 
 try:
-    df = spark.read.format("json").option("inferSchema", "true").load(source_file_path)
+    df = spark.read.format("json").option("inferSchema", "true").option("mode", "DROPMALFORMED").load(source_file_path)
 except AnalysisException as e:
     print(f"[INFO] Source file not found at: {source_file_path}")
     spark.stop()
