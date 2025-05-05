@@ -1,0 +1,16 @@
+{
+    "local": {
+        "airports_input_path": "/data/airports/",
+        "bookings_input_path": "/data/bookings/",
+        "archive_path": "/data/archive",
+        "target_base_path": "/warehouse"
+    },
+    "hdfs": {
+        "airports_input_path": "hdfs://hadoop-namenode:8020/data/airports/",
+        "bookings_input_path": "hdfs://hadoop-namenode:8020/data/bookings/",
+        "archive_path": "hdfs://hadoop-namenode:8020/data/archive",
+        "target_base_path": "hdfs://hadoop-namenode:8020/warehouse"
+    },
+    "start_date": "none",
+    "end_date": "none"
+}

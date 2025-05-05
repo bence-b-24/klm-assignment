@@ -1,0 +1,94 @@
+
+services:
+  spark-master:
+    image: bitnami/spark:latest
+    environment:
+      - HOME=/tmp
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_CONF_DIR=/opt/spark/conf
+      - spark.network.maxFrameSize=128m
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+      - ./scripts:/scripts
+      - ./warehouse:/warehouse
+      - ./jars:/opt/spark/jars
+      - ./hadoop-conf:/etc/hadoop/conf
+    networks:
+      - default
+
+  spark-worker:
+    image: bitnami/spark:latest
+    environment:
+      - HOME=/tmp
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_CONF_DIR=/opt/spark/conf
+      - spark.network.maxFrameSize=128m
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
+    depends_on:
+      - spark-master
+    volumes:
+      - ./data:/data
+      - ./scripts:/scripts
+      - ./warehouse:/warehouse
+      - ./jars:/opt/spark/jars
+      - ./hadoop-conf:/etc/hadoop/conf
+    networks:
+      - default
+    
+
+  airflow:
+    image: apache/airflow:latest
+    build:
+      context: ./airflow
+    restart: always
+    depends_on:
+      - spark-master
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW_CONN_SPARK_DEFAULT=spark://spark-master:7077
+      - AUTH_ROLE_PUBLIC='Admin'
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./data:/data
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/config:/opt/airflow/config
+      - ./scripts:/scripts
+      - ./warehouse:/warehouse
+    command: standalone
+    networks:
+      - default
+
+  hadoop-namenode:
+    image: bde2020/hadoop-namenode
+    volumes:
+      - ./data:/data
+    environment:
+      - CLUSTER_NAME=test
+    ports: [ "9870:9870" ]  # HDFS web UI
+
+  hadoop-datanode:
+    image: bde2020/hadoop-datanode
+    volumes:
+      - ./data:/data
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:8020
+  
+
+networks:
+  default:
+    driver: bridge
