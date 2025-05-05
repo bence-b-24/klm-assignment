@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 import sys
 from pyspark.sql import functions as F
-
+from utils import get_spark_session
 
 layer = "normalized"
 table_name = "flights"
@@ -11,26 +11,7 @@ target_path = f"{sys.argv[3]}/{layer}/{table_name}"
 
 catalog_name = "hdfs_catalog" if target_path.startswith("hdfs://") else "local_catalog"
 
-if catalog_name == "hdfs_catalog":
-    spark = (SparkSession.builder.appName("load_flights")
-            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-            .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-            .config("spark.sql.catalog.spark_catalog.type", "hive")
-            .config("spark.sql.catalog.hdfs_catalog", "org.apache.iceberg.spark.SparkCatalog")
-            .config("spark.sql.catalog.hdfs_catalog.type", "hadoop")
-            .config("spark.sql.catalog.hdfs_catalog.warehouse", sys.argv[3])
-            .config("spark.sql.defaultCatalog", catalog_name)
-            .master("spark://spark-master:7077").getOrCreate())
-else:
-    spark = (SparkSession.builder.appName("load_flights")
-        .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-        .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-        .config("spark.sql.catalog.spark_catalog.type", "hive")
-        .config("spark.sql.catalog.local_catalog", "org.apache.iceberg.spark.SparkCatalog")
-        .config("spark.sql.catalog.local_catalog.type", "hadoop")
-        .config("spark.sql.catalog.local_catalog.warehouse", sys.argv[3])
-        .config("spark.sql.defaultCatalog", catalog_name)
-        .master("spark://spark-master:7077").getOrCreate())
+spark = get_spark_session(app_name="load_flights", catalog_name=catalog_name, warehouse_path=sys.argv[3])
 
 df_airports = spark.read.format("iceberg").load(f"{catalog_name}.{layer}.airports").select("IATA", "Country", "Timezone")
 
@@ -38,9 +19,7 @@ df = spark.read.format("parquet").load(source_file_path)
 
 df_target = df.join(df_airports, F.col("originAirport") == F.col("IATA"), "left").drop("IATA").withColumnRenamed("Country", "originCountry").withColumnRenamed("Timezone", "originTimezone")
 df_target = df_target.join(df_airports, F.col("destinationAirport") == F.col("IATA"), "left").drop("IATA").withColumnRenamed("Country", "destinationCountry").withColumnRenamed("Timezone", "destinationTimezone")
-print("before:" + str(df_target.count()))
 df_target = df_target.dropDuplicates(["flight_id"])
-print("after:" + str(df_target.count()))
 
 if not spark.catalog.tableExists(f"{catalog_name}.{layer}.{table_name}"):
         (df_target.writeTo(f"{catalog_name}.{layer}.{table_name}")
