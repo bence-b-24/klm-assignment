@@ -4,6 +4,7 @@ from pyspark.sql import functions as F
 from pyspark.sql import types as T
 from pyspark.sql.window import Window
 from datetime import timedelta
+from utils import get_spark_session
 
 
 layer = "reporting"
@@ -17,27 +18,7 @@ catalog_name = "hdfs_catalog" if target_path.startswith("hdfs://") else "local_c
 start_date = sys.argv[4] if sys.argv[4] != "none" else None
 end_date = sys.argv[5] if sys.argv[5] != "none" else None
 
-if catalog_name == "hdfs_catalog":
-    spark = (SparkSession.builder.appName("create_report")
-            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-            .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-            .config("spark.sql.catalog.spark_catalog.type", "hive")
-            .config("spark.sql.catalog.hdfs_catalog", "org.apache.iceberg.spark.SparkCatalog")
-            .config("spark.sql.catalog.hdfs_catalog.type", "hadoop")
-            .config("spark.sql.catalog.hdfs_catalog.warehouse", sys.argv[3])
-            .config("spark.sql.defaultCatalog", catalog_name)
-            .master("spark://spark-master:7077").getOrCreate())
-else:
-    spark = (SparkSession.builder.appName("create_report")
-        .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-        .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-        .config("spark.sql.catalog.spark_catalog.type", "hive")
-        .config("spark.sql.catalog.local_catalog", "org.apache.iceberg.spark.SparkCatalog")
-        .config("spark.sql.catalog.local_catalog.type", "hadoop")
-        .config("spark.sql.catalog.local_catalog.warehouse", sys.argv[3])
-        .config("spark.sql.defaultCatalog", catalog_name)
-        .master("spark://spark-master:7077").getOrCreate())
-
+spark = get_spark_session(app_name="create_report", catalog_name=catalog_name, warehouse_path=sys.argv[3])
 
 def add_hours_to_timestamp(timestamp_col, hours_col):
     if timestamp_col is not None and hours_col is not None:

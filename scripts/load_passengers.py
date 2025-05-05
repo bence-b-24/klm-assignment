@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 import sys
+from utils import get_spark_session
 
 
 layer = "normalized"
@@ -10,26 +11,7 @@ target_path = f"{sys.argv[3]}/{layer}/{table_name}"
 
 catalog_name = "hdfs_catalog" if target_path.startswith("hdfs://") else "local_catalog"
 
-if catalog_name == "hdfs_catalog":
-    spark = (SparkSession.builder.appName("load_passengers")
-            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-            .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-            .config("spark.sql.catalog.spark_catalog.type", "hive")
-            .config("spark.sql.catalog.hdfs_catalog", "org.apache.iceberg.spark.SparkCatalog")
-            .config("spark.sql.catalog.hdfs_catalog.type", "hadoop")
-            .config("spark.sql.catalog.hdfs_catalog.warehouse", sys.argv[3])
-            .config("spark.sql.defaultCatalog", catalog_name)
-            .master("spark://spark-master:7077").getOrCreate())
-else:
-    spark = (SparkSession.builder.appName("load_passengers")
-        .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-        .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-        .config("spark.sql.catalog.spark_catalog.type", "hive")
-        .config("spark.sql.catalog.local_catalog", "org.apache.iceberg.spark.SparkCatalog")
-        .config("spark.sql.catalog.local_catalog.type", "hadoop")
-        .config("spark.sql.catalog.local_catalog.warehouse", sys.argv[3])
-        .config("spark.sql.defaultCatalog", catalog_name)
-        .master("spark://spark-master:7077").getOrCreate())
+spark = get_spark_session(app_name="load_passengers", catalog_name=catalog_name, warehouse_path=sys.argv[3])
 
 df = spark.read.format("parquet").load(source_file_path)
 

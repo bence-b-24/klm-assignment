@@ -26,7 +26,8 @@ with DAG(
         verbose=True,
         conf={
             "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
-        }
+        },
+        py_files="/scripts/utils.py"
     )
     
     extract_bookings = SparkSubmitOperator(
@@ -34,7 +35,11 @@ with DAG(
         application='/scripts/extract_bookings.py',
         conn_id='spark_default',
         application_args=[airports_input_path, bookings_input_path, target_base_path, archive_path],
-        verbose=True
+        verbose=True,
+        conf={
+            "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
+        },
+        py_files="/scripts/utils.py"
     )
     
     load_flights = SparkSubmitOperator(
@@ -45,7 +50,8 @@ with DAG(
         verbose=True,
         conf={
             "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
-        }
+        },
+        py_files="/scripts/utils.py"
     )
     
     load_passengers = SparkSubmitOperator(
@@ -56,7 +62,8 @@ with DAG(
         verbose=True,
         conf={
             "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
-        }
+        },
+        py_files="/scripts/utils.py"
     )
     
     load_flights_passengers_asn = SparkSubmitOperator(
@@ -67,7 +74,8 @@ with DAG(
         verbose=True,
         conf={
             "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
-        }
+        },
+        py_files="/scripts/utils.py"
     )
     
     create_report = SparkSubmitOperator(
@@ -78,7 +86,8 @@ with DAG(
         verbose=True,
         conf={
             "spark.jars.packages": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.0"
-        }
+        },
+        py_files="/scripts/utils.py"
     )
 
     load_airports >> extract_bookings >> [load_flights, load_passengers, load_flights_passengers_asn] >> create_report
