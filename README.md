@@ -157,7 +157,7 @@ erDiagram
 # How to run the application
 
 ## 1. Configuration
-- In `airflow/config/config.json` the path to the source files can be changed, as well as the `start_date` and `end_date` parameters can be applied.
+- In `airflow/config/config.json` the path to the source files can be changed, as well as the `start_date` and `end_date` parameters can be applied. (format: `yyyy-MM-dd`)
 - It is already pre-configured, it's not necessary to change it.
 
 ## 2. Starting the containers
